@@ -545,7 +545,6 @@ jobs:
           cd "$BUILD_ROOT/openwrt"
       
           PROXY=$(printf '%s' "$PROXY_RAW" | tr '[:upper:]' '[:lower:]' | xargs)
-          VARIANT="${PROXY_VARIANT}"   # 在 case 之前加这一行
           case "$PROXY" in
             openclash)        VARIANT="openclash"        ;;
             daeuniverse-dae)  VARIANT="daeuniverse-dae"  ;;
@@ -1141,6 +1140,7 @@ jobs:
             echo "        请确认已提交最新版 build-ponwrt.yml 后重跑。"
             exit 1
           fi
+          VARIANT="${PROXY_VARIANT}"   # 在 case 之前加这一行
           case "$VARIANT" in
             openclash)        VARIANT_DESC="OpenClash" ;;
             daeuniverse-dae)  VARIANT_DESC="daeuniverse (dae)" ;;
