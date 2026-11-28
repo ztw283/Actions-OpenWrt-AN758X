@@ -201,23 +201,19 @@ endgroup
 # ================================================================
 # 覆盖 feeds/luci 中自带的 dae / honk 
 # ================================================================
-group "覆盖 feeds/luci 中的 dae / honk，并将 honk 放入 package/custom"
+group "覆盖 feeds/luci 中的 dae / honk，并将 honk/dae 放入 package/custom"
 
 rm -rf feeds/luci/applications/luci-app-dae
 #rm -rf feeds/luci/applications/luci-app-openclash
 rm -rf feeds/luci/applications/luci-app-honk
 
 #clone https://github.com/QiuSimons/luci-app-dae    feeds/luci/applications/luci-app-dae
-# honk 是容器仓库，含 honk + luci-app-honk 两个包，必须放到 package/custom 下
-#clone https://github.com/kenzok8/openwrt-honk.git  feeds/luci/applications/luci-app-honk  "" --depth=1
-#clone https://github.com/kenzok8/openwrt-honk.git  "$PKG_DIR/honk"  "" --depth=1
-#clone https://github.com/QiuSimons/luci-app-honk.git  feeds/luci/applications/luci-app-honk  "" --depth=1
-clone https://github.com/QiuSimons/luci-app-daeuniverse.git  "$PKG_DIR/honk"  "" --depth=1
+clone https://github.com/QiuSimons/luci-app-daeuniverse.git  "$PKG_DIR/daeuniverse"  "" --depth=1
 # ------------------------------------------------------------------
 # 预放 honk-core.bin：--if-needed 检测到无 stamp 的产物会直接复用，
 # 跳过 zig/bpf-linker/cargo 工具链校验和源码编译
 # ------------------------------------------------------------------
-HONK_DIR="$PKG_DIR/honk/honk"
+HONK_DIR="$PKG_DIR/daeuniverse/honk"
 HONK_OUT="$HONK_DIR/files/honk-core.bin"
 if [ -s "$HONK_OUT" ]; then
     log " ↷ honk-core.bin 已存在，跳过预放"
