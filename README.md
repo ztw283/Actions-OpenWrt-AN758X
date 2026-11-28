@@ -14,9 +14,9 @@
 
 ## Release 4 个变体(强烈推荐 openclash和honk，openclash最简单好用，honk需要折腾一下)
 
-- openclash版 https://github.com/vernesong/OpenClash
-- dae版 https://github.com/daeuniverse/dae
-- honk版 采用404大佬的库https://github.com/QiuSimons/luci-app-honk
+- openclash：https://github.com/vernesong/OpenClash
+- dae
+- honk： https://github.com/QiuSimons/luci-app-daeuniverse
 - 啥都不带版
 
 另荐nikki-concord插件（nikki类似后端采用rust改写的mihomo内核concord）：  
