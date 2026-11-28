@@ -209,11 +209,27 @@ rm -rf feeds/luci/applications/luci-app-honk
 
 #clone https://github.com/QiuSimons/luci-app-dae    feeds/luci/applications/luci-app-dae
 clone https://github.com/QiuSimons/luci-app-daeuniverse.git  "$PKG_DIR/daeuniverse"  "" --depth=1
+
+# ------------------------------------------------------------------
+# luci-app-daeuniverse 仓库把 honk/dae 作为子目录嵌套在仓库内，
+# buildroot 只扫 package/<feed>/<pkg>/Makefile 三层深度，
+# package/custom/daeuniverse/honk 已是四层，扫不到。
+# 把子包提升到 package/custom 顶层，保持根 Makefile 留在 daeuniverse/。
+# ------------------------------------------------------------------
+for sub in honk dae; do
+  if [ -d "$PKG_DIR/daeuniverse/$sub" ] && [ -f "$PKG_DIR/daeuniverse/$sub/Makefile" ]; then
+    rm -rf "$PKG_DIR/$sub"
+    mv "$PKG_DIR/daeuniverse/$sub" "$PKG_DIR/$sub"
+    log " ⇪ 已提升子包: daeuniverse/$sub -> $sub"
+  fi
+done
+
+
 # ------------------------------------------------------------------
 # 预放 honk-core.bin：--if-needed 检测到无 stamp 的产物会直接复用，
 # 跳过 zig/bpf-linker/cargo 工具链校验和源码编译
 # ------------------------------------------------------------------
-HONK_DIR="$PKG_DIR/daeuniverse/honk"
+HONK_DIR="$PKG_DIR/honk"          # 原 $PKG_DIR/daeuniverse/honk
 HONK_OUT="$HONK_DIR/files/honk-core.bin"
 if [ -s "$HONK_OUT" ]; then
     log " ↷ honk-core.bin 已存在，跳过预放"
@@ -238,7 +254,9 @@ fi
 # 这里把 PKG_HASH / PKG_MIRROR_HASH 的纯 SKIP 占位统一改成 skip。
 # 只匹配纯占位行，不会误伤真实哈希。
 # ------------------------------------------------------------------
-sed -i 's/?=SKIP$/?=skip/' "$PKG_DIR/daeuniverse/honk/Makefile"
+sed -i 's/?=SKIP$/?=skip/' "$PKG_DIR/honk/Makefile"
+# find 循环改为扫两个目录（或直接扫 $PKG_DIR 下所有，但避免误伤其他包，保留原来 daeuniverse 的循环并把 honk 加进去）：
+done < <(find "$PKG_DIR/daeuniverse" "$PKG_DIR/honk" "$PKG_DIR/dae" -type f -name Makefile -print0)
 
 if [ -d "$PKG_DIR/daeuniverse" ]; then
   honk_patched=0
