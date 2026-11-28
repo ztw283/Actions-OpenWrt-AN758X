@@ -545,6 +545,7 @@ jobs:
           cd "$BUILD_ROOT/openwrt"
       
           PROXY=$(printf '%s' "$PROXY_RAW" | tr '[:upper:]' '[:lower:]' | xargs)
+          VARIANT="${PROXY_VARIANT}"   # 在 case 之前加这一行
           case "$PROXY" in
             openclash)        VARIANT="openclash"        ;;
             daeuniverse-dae)  VARIANT="daeuniverse-dae"  ;;
@@ -1150,10 +1151,13 @@ jobs:
           esac
           
           # manifest 校验正则
+          MANIFEST=$(ls *.manifest 2>/dev/null | head -1)
+          [ -n "$MANIFEST" ] || { echo "::error::未找到 .manifest 文件"; exit 1; }
+
           ALL_RE='^(openclash|luci-app-openclash|dae|daed|honk|honk-core|luci-app-honk|luci-app-daeuniverse)'
           case "$VARIANT" in
             openclash)        CORE_RE='^(openclash|luci-app-openclash)' ;;
-            daeuniverse-dae)  CORE_RE='^(luci-app-daeuniverse|dae)$' ;;
+            daeuniverse-dae)  CORE_RE='^(luci-app-daeuniverse|dae)' ;;      # 去 $
             daeuniverse-honk) CORE_RE='^(luci-app-daeuniverse|honk)' ;;
             daeuniverse-both) CORE_RE='^(luci-app-daeuniverse|dae|honk)' ;;
             bare)             CORE_RE='' ;;
@@ -1285,23 +1289,21 @@ jobs:
           # 机型白名单（空格分隔，按需增删；新增机型记得加进来）
           KEEP_PROFILES: 'nokia_xg-040g-mf-ubi nokia_xg-040g-md-ubi'
         run: |
-          # 1) 组装保留清单：白名单机型 × 4 变体
+          # 1) 组装保留清单：白名单机型 × 5 变体
           KEEP="toolchain-cache"
           for p in $KEEP_PROFILES; do
             case "$p" in
               nokia_xg-040g-mf*) soc=an7583 ;;
-              *)                 soc=an7581 ;;
+              *) soc=an7581 ;;
             esac
-            for v in bare openclash dae honk; do
+            for v in bare openclash daeuniverse-dae daeuniverse-honk daeuniverse-both; do
               KEEP="$KEEP ponwrt-${soc}-${p}-${REPO_BRANCH}-${v}"
             done
           done
-
-          # 2) 兜底：强制保留本次构建机型的 4 个变体，
-          #    防止 KEEP_PROFILES 忘写当前机型导致刚发布的 Release 被删
-
+          
+          # 2) 兜底：本次构建机型 × 5 变体（变量用 env 里的 SOC，不是循环残留）
           for v in bare openclash daeuniverse-dae daeuniverse-honk daeuniverse-both; do
-            KEEP="$KEEP ponwrt-${soc}-${p}-${REPO_BRANCH}-${v}"
+            KEEP="$KEEP ${DEVICE_NAME}-${REPO_BRANCH}-${v}"
           done
 
           echo "==== 本次保留的 Release tag ===="
