@@ -19,8 +19,8 @@
 - honk版 采用404大佬的库https://github.com/QiuSimons/luci-app-honk
 - 啥都不带版
 
-推荐nikki-concord插件（nikki类似后端采用rust改写的mihomo内核concord）：
-https://github.com/Vialibrex/concord
+推荐nikki-concord插件（nikki类似后端采用rust改写的mihomo内核concord）：  
+https://github.com/Vialibrex/concord  
 https://github.com/user-7392/nikki-concord
 
 注意，本hub编译的404大佬的honk自带v2ray的geoip/site库（/user/share/v2ray/），在honk启动时候加入变量引入使用。
