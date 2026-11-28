@@ -19,7 +19,7 @@
 - honk版 采用404大佬的库https://github.com/QiuSimons/luci-app-honk
 - 啥都不带版
 
-推荐nikki-concord插件（nikki类似后端采用rust改写的mihomo内核concord）：  
+另荐nikki-concord插件（nikki类似后端采用rust改写的mihomo内核concord）：  
 https://github.com/Vialibrex/concord  
 https://github.com/user-7392/nikki-concord
 
