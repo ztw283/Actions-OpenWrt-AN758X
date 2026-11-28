@@ -238,9 +238,9 @@ fi
 # 这里把 PKG_HASH / PKG_MIRROR_HASH 的纯 SKIP 占位统一改成 skip。
 # 只匹配纯占位行，不会误伤真实哈希。
 # ------------------------------------------------------------------
-sed -i 's/?=SKIP$/?=skip/' "$PKG_DIR/honk/honk/Makefile"
+sed -i 's/?=SKIP$/?=skip/' "$PKG_DIR/daeuniverse/honk/Makefile"
 
-if [ -d "$PKG_DIR/honk" ]; then
+if [ -d "$PKG_DIR/daeuniverse" ]; then
   honk_patched=0
   while IFS= read -r -d '' mkfile; do
     if grep -qE '^[[:space:]]*PKG_(HASH|MIRROR_HASH)[[:space:]]*:?=[[:space:]]*SKIP[[:space:]]*$' "$mkfile"; then
@@ -248,7 +248,7 @@ if [ -d "$PKG_DIR/honk" ]; then
       log "  ✏ 修正 $(basename "$(dirname "$mkfile")")/Makefile：PKG_*HASH SKIP → skip"
       honk_patched=$((honk_patched + 1))
     fi
-  done < <(find "$PKG_DIR/honk" -type f -name Makefile -print0)
+  done < <(find "$PKG_DIR/daeuniverse" -type f -name Makefile -print0)
   log "  ✅ honk Makefile 哈希占位修正: ${honk_patched} 处"
 fi
 
