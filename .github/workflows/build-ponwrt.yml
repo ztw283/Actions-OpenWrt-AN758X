@@ -88,8 +88,9 @@ on:
         options:
           - ''
           - openclash
-          - dae
-          - honk
+          - daeuniverse-both   # 新框架，双核心
+          - daeuniverse-dae    # 新框架，仅 dae
+          - daeuniverse-honk   # 新框架，仅 honk
       disable_packages:
         description: '要禁用的包（空格分隔，例: nano htop tcpdump）'
         required: false
