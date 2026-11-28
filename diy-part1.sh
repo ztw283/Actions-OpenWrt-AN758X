@@ -4,30 +4,30 @@
 #
 # 运行目录：ponwrt 源码根目录（feeds 安装之后、加载 .config 之前）
 # 用法：把需要的插件开关改成 true，再到 configs/<机型>.config 里
-#      把对应 "# CONFIG_PACKAGE_xxx is not set" 改成 "=y"
+#       把对应 "# CONFIG_PACKAGE_xxx is not set" 改成 "=y"
 #
 # 温度由 autocore 的 /sbin/tempinfo 提供（files/sbin/tempinfo），
-# # ================================================================
+# ================================================================
 
 # 严格模式 + pipefail，任何命令失败都立即退出
 set -Eeuo pipefail
 IFS=$'\n\t'
 
 readonly SCRIPT_START=$(date +%s)
-readonly PKG_DIR="$(pwd)/package/custom"          # 绝对路径，中途 cd 不失效
+readonly PKG_DIR="$(pwd)/package/custom"     # 绝对路径，中途 cd 不失效
 readonly PKGINFO="tmp/.packageinfo"
 
 # ---------------------------------------------------------
 # 插件开关（显式声明每一个，避免未定义变量）
 # ---------------------------------------------------------
-readonly ADD_AIROHA_NPU=true    # luci-app-airoha-npu（Airoha SoC 状态页）
-readonly ADD_PASSWALL=false     # luci-app-passwall（含依赖源）
-readonly ADD_OPENCLASH=false    # luci-app-openclash ⚠ 依赖 Ruby/Rust，编译极慢
-readonly ADD_MOSDNS=false       # luci-app-mosdns + v2ray-geodata
-readonly ADD_LUCKY=false        # luci-app-lucky（DDNS + socat）
-readonly ADD_TAILSCALE=false    # luci-app-tailscale
-readonly ADD_OPENLIST=false     # luci-app-openlist2（alist/openlist 挂载）
-readonly ADD_SMARTDNS=false     # luci-app-smartdns
+readonly ADD_AIROHA_NPU=true      # luci-app-airoha-npu（Airoha SoC 状态页）
+readonly ADD_PASSWALL=false       # luci-app-passwall（含依赖源）
+readonly ADD_OPENCLASH=false      # luci-app-openclash ⚠ 依赖 Ruby/Rust，编译极慢
+readonly ADD_MOSDNS=false         # luci-app-mosdns + v2ray-geodata
+readonly ADD_LUCKY=false          # luci-app-lucky（DDNS + socat）
+readonly ADD_TAILSCALE=false      # luci-app-tailscale
+readonly ADD_OPENLIST=false       # luci-app-openlist2（alist/openlist 挂载）
+readonly ADD_SMARTDNS=false       # luci-app-smartdns
 
 # ---------------------------------------------------------
 # 插件清单——"开关 + 仓库 + 目录 + 分支"集中在这里
@@ -46,10 +46,10 @@ readonly PKG_LIST=(
   "smartdns|${ADD_SMARTDNS}|https://github.com/pymumu/smartdns|master"
 )
 
-log()     { echo "[$(date '+%H:%M:%S')] $*"; }
-die()     { echo "::error::$*" >&2; exit 1; }
-group()   { echo "::group::$*"; }
-endgroup(){ echo "::endgroup::"; }
+log()      { echo "[$(date '+%H:%M:%S')] $*"; }
+die()      { echo "::error::$*" >&2; exit 1; }
+group()    { echo "::group::$*"; }
+endgroup() { echo "::endgroup::"; }
 
 # 带指数退避的重试
 retry() {
@@ -78,6 +78,7 @@ clone() {
 
   local log_file
   log_file="$(mktemp /tmp/clone-XXXXXX.log)"
+
   local args=(git clone --progress $filter)
   [ -n "$br" ] && args+=(-b "$br")
   args+=("$url" "$dir")
@@ -95,6 +96,7 @@ clone() {
   if [ ! -f "$dir/Makefile" ]; then
     log "  ⚠ $dir 无根 Makefile，视为源仓库/子包容器"
   fi
+
   local commit
   commit=$(git -C "$dir" rev-parse --short HEAD 2>/dev/null || echo "unknown")
   log "  ✅ $(basename "$dir") @ ${commit}"
@@ -103,6 +105,7 @@ clone() {
 # ================================================================
 # 主流程
 # ================================================================
+
 group "拉取可选插件 (diy-part1.sh)"
 mkdir -p "$PKG_DIR"
 endgroup
@@ -152,7 +155,6 @@ group "重建包索引"
 rm -f tmp/.packageinfo tmp/.targetinfo
 rm -f tmp/info/.scan-packageinfo.stamp tmp/info/.scan-targetinfo.stamp
 rm -f tmp/.config-package.in tmp/.config-target.in
-
 make -s prepare-tmpinfo OPENWRT_BUILD= 2>&1 | tail -5 || true
 [ -s "$PKGINFO" ] || die "$PKGINFO 为空，prepare-tmpinfo 失败"
 log "  ✅ tmp/.packageinfo 共 $(grep -c '^Package: ' "$PKGINFO") 个包"
@@ -199,16 +201,14 @@ log "  ✅ 必装插件全部就绪: ${CRITICAL_PKGS[*]}"
 endgroup
 
 # ================================================================
-# 覆盖 feeds/luci 中自带的 dae / honk 
+# 覆盖 feeds/luci 中的 dae / honk，集成 luci-app-daeuniverse
 # ================================================================
-group "覆盖 feeds/luci 中的 dae / honk，并将 honk/dae 放入 package/custom"
+group "集成 luci-app-daeuniverse（覆盖 feeds 中的 dae / honk）"
 
 rm -rf feeds/luci/applications/luci-app-dae
-#rm -rf feeds/luci/applications/luci-app-openclash
 rm -rf feeds/luci/applications/luci-app-honk
 
-#clone https://github.com/QiuSimons/luci-app-dae    feeds/luci/applications/luci-app-dae
-clone https://github.com/QiuSimons/luci-app-daeuniverse.git  "$PKG_DIR/daeuniverse"  "" --depth=1
+clone https://github.com/QiuSimons/luci-app-daeuniverse.git "$PKG_DIR/daeuniverse" "" --depth=1
 
 # ------------------------------------------------------------------
 # luci-app-daeuniverse 仓库把 honk/dae 作为子目录嵌套在仓库内，
@@ -220,86 +220,59 @@ for sub in honk dae; do
   if [ -d "$PKG_DIR/daeuniverse/$sub" ] && [ -f "$PKG_DIR/daeuniverse/$sub/Makefile" ]; then
     rm -rf "$PKG_DIR/$sub"
     mv "$PKG_DIR/daeuniverse/$sub" "$PKG_DIR/$sub"
-    log " ⇪ 已提升子包: daeuniverse/$sub -> $sub"
+    log "  ⇪ 已提升子包: daeuniverse/$sub -> $sub"
   fi
 done
 
-
 # ------------------------------------------------------------------
-# 预放 honk-core.bin：--if-needed 检测到无 stamp 的产物会直接复用，
+# 预放 honk-core.bin：--if-needed 检测到已有产物会直接复用，
 # 跳过 zig/bpf-linker/cargo 工具链校验和源码编译
 # ------------------------------------------------------------------
-HONK_DIR="$PKG_DIR/honk"          # 原 $PKG_DIR/daeuniverse/honk
+HONK_DIR="$PKG_DIR/honk"
 HONK_OUT="$HONK_DIR/files/honk-core.bin"
-if [ -s "$HONK_OUT" ]; then
-    log " ↷ honk-core.bin 已存在，跳过预放"
-else
-    group "预放 honk-core.bin（免 zig 工具链）"
-    curl -fsSL --retry 3 -o /tmp/honk-core.tar.gz \
-      "https://github.com/daeuniverse/honk/releases/download/v0.1.0-beta.2/honk-core-v0.1.0-beta.2-aarch64-unknown-linux-musl-stock-native-api.tar.gz"
-    echo "bef60542db1d29fa87ad3b5300d0960a1bd173b7ba1121b423b27985a202eb2c  /tmp/honk-core.tar.gz" | sha256sum -c -
-    rm -rf /tmp/honkpkg && mkdir -p /tmp/honkpkg
-    tar -xzf /tmp/honk-core.tar.gz -C /tmp/honkpkg
-    core="$(find /tmp/honkpkg -type f -name honk-core -print -quit)"
-    [ -n "$core" ] || die "tarball 内未找到 honk-core，release 结构可能已变"
-    mkdir -p "$HONK_DIR/files"
-    cp "$core" "$HONK_OUT"
-    log " ✅ 已预放 honk-core.bin ($(du -h "$HONK_OUT" | cut -f1))"
-    endgroup
-fi
-# ------------------------------------------------------------------
-# honk 仓库的 Makefile 把 PKG_HASH 写成大写 SKIP 占位，
-# OpenWrt scripts/download.pl 只识别小写 skip 跳过校验；
-# 大写 SKIP 会触发 "Cannot find appropriate hash command ..."。
-# 这里把 PKG_HASH / PKG_MIRROR_HASH 的纯 SKIP 占位统一改成 skip。
-# 只匹配纯占位行，不会误伤真实哈希。
-# ------------------------------------------------------------------
-sed -i 's/?=SKIP$/?=skip/' "$PKG_DIR/honk/Makefile"
-# find 循环改为扫两个目录（或直接扫 $PKG_DIR 下所有，但避免误伤其他包，保留原来 daeuniverse 的循环并把 honk 加进去）：
-done < <(find "$PKG_DIR/daeuniverse" "$PKG_DIR/honk" "$PKG_DIR/dae" -type f -name Makefile -print0)
 
+if [ -s "$HONK_OUT" ]; then
+  log "  ↷ honk-core.bin 已存在，跳过预放"
+else
+  group "预放 honk-core.bin（免 zig 工具链）"
+  curl -fsSL --retry 3 -o /tmp/honk-core.tar.gz \
+    "https://github.com/daeuniverse/honk/releases/download/v0.1.0-beta.2/honk-core-v0.1.0-beta.2-aarch64-unknown-linux-musl-stock-native-api.tar.gz"
+  echo "bef60542db1d29fa87ad3b5300d0960a1bd173b7ba1121b423b27985a202eb2c  /tmp/honk-core.tar.gz" | sha256sum -c -
+
+  rm -rf /tmp/honkpkg && mkdir -p /tmp/honkpkg
+  tar -xzf /tmp/honk-core.tar.gz -C /tmp/honkpkg
+
+  core="$(find /tmp/honkpkg -type f -name honk-core -print -quit)"
+  [ -n "$core" ] || die "tarball 内未找到 honk-core，release 结构可能已变"
+
+  mkdir -p "$HONK_DIR/files"
+  cp "$core" "$HONK_OUT"
+  log "  ✅ 已预放 honk-core.bin ($(du -h "$HONK_OUT" | cut -f1))"
+  endgroup
+fi
+
+# ------------------------------------------------------------------
+# PKG_HASH 大写 SKIP 占位改为小写 skip（scripts/download.pl 只识别小写）。
+# 大写 SKIP 会触发 "Cannot find appropriate hash command ..."。
+# 只匹配纯占位行，不会误伤真实哈希。
+# 扫 daeuniverse / honk / dae 三个目录（honk/dae 已提升到顶层）。
+# ------------------------------------------------------------------
 if [ -d "$PKG_DIR/daeuniverse" ]; then
-  honk_patched=0
+  hash_patched=0
   while IFS= read -r -d '' mkfile; do
     if grep -qE '^[[:space:]]*PKG_(HASH|MIRROR_HASH)[[:space:]]*:?=[[:space:]]*SKIP[[:space:]]*$' "$mkfile"; then
       sed -i -E 's/^([[:space:]]*PKG_(HASH|MIRROR_HASH)[[:space:]]*:?=[[:space:]]*)SKIP[[:space:]]*$/\1skip/' "$mkfile"
       log "  ✏ 修正 $(basename "$(dirname "$mkfile")")/Makefile：PKG_*HASH SKIP → skip"
-      honk_patched=$((honk_patched + 1))
+      hash_patched=$((hash_patched + 1))
     fi
-  done < <(find "$PKG_DIR/daeuniverse" -type f -name Makefile -print0)
-  log "  ✅ honk Makefile 哈希占位修正: ${honk_patched} 处"
+  done < <(find "$PKG_DIR/daeuniverse" "$PKG_DIR/honk" "$PKG_DIR/dae" -type f -name Makefile -print0)
+  log "  ✅ Makefile 哈希占位修正: ${hash_patched} 处"
 fi
-
-# 一行搞定如下
-#sed -i -E -e 's/[[:space:]]*\+v2ray-(geoip|geosite)//g' \
-#          -e '/^[[:space:]]*\\[[:space:]]*$/d' \
-#          feeds/luci/applications/luci-app-dae/dae/Makefile \
-#          "$PKG_DIR/honk/honk/Makefile"
 
 endgroup
 
-#group "honk 下载源预检（staging 资产存在性）"
-#if [ -d "$PKG_DIR/honk/honk" ]; then
-#    HONK_BASE="https://github.com/kenzok8/openwrt-honk/releases/download/staging"
-#    commit=$(sed -n 's/^CORE_COMMIT:=//p' "$PKG_DIR/honk/honk/Makefile")
-#    for a in "honk-core-${commit}-x86_64.tar.gz" \
-#             "honk-core-${commit}-aarch64.tar.gz" \
-#             "honk-core-${commit}-armv7.tar.gz"; do
-#        if curl -fsIL "$HONK_BASE/$a" >/dev/null; then
-#            log " ✅ staging 存在: $a"
-#        else
-#            echo "::warning::staging 缺少 $a，固件编译时 honk 包会 404，需固定到 source-* tag"
-#        fi
-#    done
-#    doona=$(sed -n 's/^PKG_SOURCE:=//p' "$PKG_DIR/honk/luci-app-honk/Makefile")
-#    curl -fsIL "$HONK_BASE/$doona" >/dev/null || \
-#        echo "::warning::staging 缺少 $doona"
-#fi
-#endgroup
-
 # OpenClash update to latest version
 rm -rf feeds/luci/applications/luci-app-openclash
-#git clone --depth=1 -b dev https://github.com/vernesong/OpenClash.git package/custom/openclash
 git clone --depth=1 -b dev https://github.com/vernesong/OpenClash.git feeds/luci/applications/luci-app-openclash
 
 # ================================================================
